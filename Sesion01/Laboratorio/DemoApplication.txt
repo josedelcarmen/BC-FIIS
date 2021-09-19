@@ -1,0 +1,66 @@
+package com.cjava.hbmysql.demo;
+
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.cfg.Configuration;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import com.cjava.hbmysql.demo.pojos.Persona;
+import com.cjava.hbmysql.demo.util.HibernateUtil;
+
+@SpringBootApplication
+public class DemoApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+        ejecutar();
+    }
+public static void ejecutar() {
+        
+        // Setea las tablas de la base de datos
+        HibernateUtil.droptable("drop table empleado");
+        HibernateUtil.setup("create table empleado ( id int, cnombre VARCHAR(20))");
+        
+        
+        // Crea un SessionFactory y un objeto Session
+        SessionFactory sessions = new Configuration().configure().buildSessionFactory();
+        Session session = sessions.openSession();
+        
+        // Encapsula el cilo de vida de las operaciones en una transaccion
+        Transaction tx = null;
+        try {
+            tx = session.beginTransaction();
+            
+            // Crea un objeto persona y la graba a la base de datos
+            Persona p1 = new Persona();
+            p1.setNombre("Edwin Maravi");
+            session.save(p1);
+            
+            // Crea otra persona y la agrega a la base de datos
+            Persona p2 = new Persona();
+            p2.setNombre("Khaterine Sulbaran");
+            session.save(p2);
+            
+            // Obtiene objetos de la base de datos
+            Persona persona = (Persona)session. get(Persona.class, p1.getId());
+            System.out.println("Primera persona = " + persona.getNombre());
+            persona = (Persona)session.get(Persona.class, p2.getId());
+            System.out.println("Segunda Persona = " + persona.getNombre());
+            
+            tx.commit();
+            tx = null;
+        } catch ( HibernateException e ) {
+            if ( tx != null ) tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+        
+        // Muestra las tablas
+        HibernateUtil.checkData("select * from empleado");
+              
+    }
+}
